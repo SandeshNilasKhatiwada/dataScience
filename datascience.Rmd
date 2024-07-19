@@ -1,0 +1,144 @@
+---
+title: "DataScienceProject"
+author: "Sandesh Nilas Khatiwada"
+date: "2024-07-18"
+output:
+  html_document:
+    df_print: paged
+---
+
+Cleaning the data from the file
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(lubridate)
+```
+
+Loading data for cleaning the house data
+
+```{r}
+house2020= read_csv("pp-2020.csv", show_col_types = FALSE)
+
+house2021 = read_csv("pp-2021.csv", show_col_types = FALSE)
+
+house2022 = read_csv("pp-2022.csv", show_col_types = FALSE)
+
+house2023 = read_csv("pp-2023.csv", show_col_types = FALSE)
+
+colnames(house2020) = c("ID" , "Price", "Year", "PostCode" , "PAON", "SAON", "FL", "House Num", "Flat", "Street Name",
+                     
+                     "Locality", "Town" , "District", "County", "Type1", "Type2" )
+
+colnames(house2021) = c("ID" , "Price", "Year", "PostCode" , "PAON", "SAON", "FL", "House Num", "Flat", "Street Name",
+                     
+                     "Locality", "Town" , "District", "County", "Type1", "Type2")
+
+colnames(house2022) = c("ID" , "Price", "Year", "PostCode" , "PAON", "SAON", "FL", "House Num", "Flat", "Street Name",
+                     
+                     "Locality", "Town" , "District", "County" , "Type1", "Type2")
+
+colnames(house2023) = c("ID" , "Price", "Year", "PostCode" , "PAON", "SAON", "FL", "House Num", "Flat", "Street Name",
+                     
+                     "Locality", "Town" , "District", "County" , "Type1", "Type2")
+
+```
+
+Cleaning the data such that it will omit the null value and then only saving the unique data
+
+```{r}
+
+housingPrice = rbind(house2020,house2021,house2022,house2023) %>%
+  na.omit() %>%
+  distinct() %>%
+  as_tibble()
+
+```
+
+creating the cleaned csv file where there will be no null value in house price data
+
+```{r}
+write_csv(housingPrice, "cleaned_price_data.csv")
+```
+
+filter all the data for Bristol and Cornwall
+
+```{r}
+selectedCounty <- housingPrice %>% 
+  filter(County %in% c('CITY OF BRISTOL','CORNWALL'))
+print(selectedCounty)
+```
+
+now grouping the dataset according to year 
+
+```{r}
+selectedCounty$Year <- as.Date(selectedCounty$Year)
+
+# extracting year from the date 
+selectedCounty$y <- year(selectedCounty$Year)
+
+# grouping data acording to year 
+grouped_housing <- selectedCounty %>% 
+  group_by(y,County) %>%
+  summarise(avg_price = mean(Price))
+
+print(grouped_housing)
+
+
+
+```
+
+now I am creating the visualization for housing
+
+```{r}
+#line chart for year 2020-2023 for average of both county 
+ggplot(grouped_housing, aes(x=y, y= avg_price, colour = County, group = County) ) +
+  geom_line()+
+  geom_point()+
+  labs(title = "Property Prices Over Time by County (2020-23)",
+       x = "Year",
+       y = "Average Price")+theme_minimal()
+
+```
+
+now creating the data for only year 2022 
+
+```{r}
+
+# Filter data for the year 2022
+data_2022 <- selectedCounty %>%
+  filter(y == 2022)
+
+#box plot 
+ggplot(data = data_2022, aes(x = County, y = Price, color = County)) +
+  geom_boxplot() +
+  labs(title = "Property Prices in 2022 by City",
+       x = "County",
+       y = "Price") +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+#barChart 
+ggplot(data = data_2022, aes(x = County, y = Price, fill = County)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Property Prices in 2022 by City",
+       x = "County",
+       y = "Total Price") +
+  theme_minimal()
+
+
+```
+
+
+
+
+
+
+
+
